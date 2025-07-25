@@ -1,19 +1,23 @@
 import torch
-from .unet1d import Unet1D
-from .diffusion1d import GaussianDiffusion1D
+from model.diffusion.unet1d import Unet1D
+from model.diffusion.latent_diffusion_model import LatentDiffusionModel
+from model.diffusion.beta_scheduler import BetaScheduleSigmoid
 
 def create_diffusion_model(
         unet_dim=128,
         unet_dim_mults=(1, 2, 4, 8),
-
         diffusion_latent_dim=128,
         diffusion_timesteps=1000,
-        sampling_timesteps=1000,
+        objective="pred_v",
+        beta_schedule=BetaScheduleSigmoid,
+        clip_denoised=False,
+        clip_min=-1.0,
+        clip_max=1.0,
+        model_path=None
     ):
 
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
 
     '''
         Utility for creating a diffusion model with a built in UNet
@@ -26,14 +30,17 @@ def create_diffusion_model(
         channels=1
     ).to(device)
 
-    # TODO: Can add sampling timesteps
-    diffusion_model = GaussianDiffusion1D(
+    diffusion_model = LatentDiffusionModel(
         model=unet_model,
-        seq_length=diffusion_latent_dim,
-        timesteps=diffusion_timesteps,
-        objective='pred_v',
-        sampling_timesteps=sampling_timesteps
-    ).to(device)
+        beta_schedule=beta_schedule,
+        objective=objective,
+        latent_dim=diffusion_latent_dim,
+        num_timesteps=diffusion_timesteps,
+        device=device,
+        clip_denoised=clip_denoised,
+        clip_min=clip_min,
+        clip_max=clip_max
+    )
 
     # print basic info and what not to let user know model is created
 
@@ -54,6 +61,10 @@ def create_diffusion_model(
     
     print(f"- Model Name: {type(diffusion_model).__name__}")
 
+    if model_path is not None:
+        checkpoint = torch.load(model_path)
+        diffusion_model.load_state_dict(checkpoint['model'])
+        
     return diffusion_model
 
 def load_diffusion_model(model, model_path, device=None):
@@ -64,11 +75,3 @@ def load_diffusion_model(model, model_path, device=None):
     model.load_state_dict(checkpoint['model'])
 
     print(f"Loaded model successfully from {model_path}")
-
-def sample_diffusion(model: GaussianDiffusion1D, batch_size=4):
-    model.eval()
-    with torch.no_grad():
-        latents = model.sample(batch_size=batch_size)
-        latents = latents.reshape(batch_size, -1)
-        return latents
-

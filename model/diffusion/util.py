@@ -1,4 +1,5 @@
 import math
+import torch
 
 # small helper modules
 def extract(a, t, x_shape):

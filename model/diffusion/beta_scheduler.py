@@ -1,8 +1,15 @@
-from .util import *
+from model.diffusion.util import *
 import torch
 
-class BetaScheduler:
-    def get_linear_beta_schedule(num_timesteps):
+# abstract base class
+class BetaSchedule:
+    def get_betas(num_timesteps, *args):
+        pass
+    def get_schedule_name():
+        pass
+
+class BetaScheduleLinear(BetaSchedule):
+    def get_betas(num_timesteps):
         """
         linear schedule, proposed in original ddpm paper
         """
@@ -10,8 +17,11 @@ class BetaScheduler:
         beta_start = scale * 0.0001
         beta_end = scale * 0.02
         return torch.linspace(beta_start, beta_end, num_timesteps, dtype = torch.float64)
-    
-    def get_sigmoid_beta_schedule(num_timesteps, start = -3, end = 3, tau = 1, clamp_min = 1e-5):
+    def get_schedule_name():
+        return 'linear'
+
+class BetaScheduleSigmoid(BetaSchedule):
+    def get_betas(num_timesteps, start = -3, end = 3, tau = 1, clamp_min = 1e-5):
         """
         sigmoid schedule
         proposed in https://arxiv.org/abs/2212.11972 - Figure 8
@@ -25,8 +35,11 @@ class BetaScheduler:
         alphas_cumprod = alphas_cumprod / alphas_cumprod[0]
         betas = 1 - (alphas_cumprod[1:] / alphas_cumprod[:-1])
         return torch.clip(betas, 0, 0.999)
+    def get_schedule_name():
+        return 'sigmoid'
     
-    def get_cosine_beta_schedule(num_timesteps, s = 0.008):
+class BetaScheduleCosine(BetaSchedule):
+    def get_betas(num_timesteps, s = 0.008):
         """
         cosine schedule
         as proposed in https://openreview.net/forum?id=-NEXDKk8gZ
@@ -37,3 +50,5 @@ class BetaScheduler:
         alphas_cumprod = alphas_cumprod / alphas_cumprod[0]
         betas = 1 - (alphas_cumprod[1:] / alphas_cumprod[:-1])
         return torch.clip(betas, 0, 0.999)
+    def get_schedule_name():
+        return 'cosine'
