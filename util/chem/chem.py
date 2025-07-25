@@ -29,3 +29,5 @@ def calculate_logp(smiles, invalid_token=None):
     return logps
 
 
+def selfies_to_smiles(selfies):
+    return [sf.decoder(selfie) for selfie in selfies]
