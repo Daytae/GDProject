@@ -2,6 +2,7 @@ import torch
 from model.diffusion.unet1d import Unet1D
 from model.diffusion.latent_diffusion_model import LatentDiffusionModel
 from model.diffusion.beta_scheduler import BetaScheduleSigmoid
+from util.util import get_device
 
 def create_diffusion_model(
         unet_dim=128,
@@ -13,12 +14,11 @@ def create_diffusion_model(
         clip_denoised=False,
         clip_min=-1.0,
         clip_max=1.0,
-        model_path=None
+        model_path=None,
+        device=None
     ):
 
-
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
+    device = get_device(device)
     '''
         Utility for creating a diffusion model with a built in UNet
     '''
@@ -40,7 +40,7 @@ def create_diffusion_model(
         clip_denoised=clip_denoised,
         clip_min=clip_min,
         clip_max=clip_max
-    )
+    ).to(device)
 
     # print basic info and what not to let user know model is created
 
@@ -68,10 +68,10 @@ def create_diffusion_model(
     return diffusion_model
 
 def load_diffusion_model(model, model_path, device=None):
-    if device is None:
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = get_device(device)
 
     checkpoint = torch.load(model_path)
-    model.load_state_dict(checkpoint['model'])
+    model.load_state_dict(checkpoint['model']).to(device)
+    
 
     print(f"Loaded model successfully from {model_path}")

@@ -42,7 +42,7 @@ def smiles_to_selfies(smiles, strict=True, null_selfie=""):
 
 def load_vae_selfies(path_to_vae_statedict="saved_models/selfies_vae/selfies-vae.ckpt", vocab_path="saved_models/selfies_vae/vocab.json"):
     """Load a VAE model for SELFIES representation"""
-    
+
     with open(vocab_path) as f:
         vocab = json.load(f)
     
@@ -58,7 +58,7 @@ def load_vae_selfies(path_to_vae_statedict="saved_models/selfies_vae/selfies-vae
         d_enc=256,
         encoder_dim_ff=512,
         encoder_num_layers=3,
-    )
+    ).to(device)
     
     state_dict = torch.load(path_to_vae_statedict, map_location=device)["state_dict"]
     

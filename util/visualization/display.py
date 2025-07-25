@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from matplotlib import image as mpimg
 import io
 
+import torch
+
 def display_molecule(smiles_string, title=None):
     """
     Display molecular structure from SMILES string
@@ -57,3 +59,34 @@ def display_molecule(smiles_string, title=None):
         print(f"Details: {e}")
     except Exception as e:
         print(f"Error processing molecule: {e}")
+
+# Visualizes the latent space
+def display_latent(latent):
+    latent = latent.cpu()
+    latent_reshaped = torch.reshape(latent, shape = (8, 16))
+    plt.figure(figsize=(8, 10))
+    plt.imshow(latent_reshaped, cmap='viridis')
+
+    # Add values to each cell
+    for i in range(8):
+        for j in range(16):
+            plt.text(j, i, f'{latent_reshaped[i,j]:.2f}', 
+                    ha='center', va='center', color='white')
+
+    plt.title(label=f"Max Value: {latent.max()}  Min Value: {latent.min()}")
+    plt.colorbar()
+    plt.show()
+
+
+def display_histograms(array_list, label_list):
+    plt.figure(figsize=(10, 6))
+
+    color_list = ['red', 'blue', 'green', 'yellow', 'pink', 'purple']
+    for array, label, color in zip(array_list, label_list, color_list):
+        plt.hist(array, alpha=0.7, label=label, density=True, color=color)
+
+    plt.xlabel('Values')
+    plt.ylabel('Frequency')
+    plt.title('Histogram of Logps')
+    plt.legend()
+    plt.show()
