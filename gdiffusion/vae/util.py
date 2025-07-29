@@ -160,7 +160,7 @@ def selfies_to_latent(selfies: Union[str, List[str]], vae):
         return torch.cat([selfies_to_latent_helper(s, vae) for s in selfies], dim=0)
     
 
-def load_vae_peptides(path_to_vae_statedict, vocab_path="data/peptide_vocab.json"):
+def load_vae_peptides(path_to_vae_statedict="saved_models/peptide_vae/peptide_model.ckpt", vocab_path="saved_models/peptide_vae/peptide_vocab.json"):
     """Load a VAE model for peptide representation"""
     
     # Load vocabulary
