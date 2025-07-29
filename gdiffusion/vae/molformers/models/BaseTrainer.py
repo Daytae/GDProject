@@ -4,8 +4,8 @@ import torch
 from torch.distributions import Categorical
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
-from model.vae.molformers.utils.PostCollapse import KLCalc
-from model.vae.molformers.utils.utils import count_parameters
+from gdiffusion.vae.molformers.utils.PostCollapse import KLCalc
+from gdiffusion.vae.molformers.utils.utils import count_parameters
 
 import torch.nn.functional as F
 

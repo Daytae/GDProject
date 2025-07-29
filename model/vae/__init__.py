@@ -1,2 +1,0 @@
-from model.vae.util import (selfies_to_smiles, smiles_to_selfies, load_vae_selfies, 
-    latent_to_selfies, latent_to_smiles, selfies_to_latent, load_vae_peptides, latent_to_peptides, peptides_to_latent)

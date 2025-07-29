@@ -6,8 +6,8 @@ from torch.nn.utils.rnn import pad_sequence
 import lightning.pytorch as pl
 import selfies as sf
 
-from model.vae.molformers.models.BaseTrainer import VAEModule
-from model.vae.molformers.models.BaseVAESwiGLURope import BaseVAE
+from gdiffusion.vae.molformers.models.BaseTrainer import VAEModule
+from gdiffusion.vae.molformers.models.BaseVAESwiGLURope import BaseVAE
 from typing import List, Union
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'

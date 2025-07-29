@@ -6,6 +6,10 @@ from matplotlib import image as mpimg
 import io
 
 import torch
+import util.chem as chem
+import util
+import gdiffusion as gd
+import util.stats as gdstats
 
 def display_molecule(smiles_string, title=None):
     """
@@ -90,3 +94,31 @@ def display_histograms(array_list, label_list):
     plt.title('Histogram of Logps')
     plt.legend()
     plt.show()
+
+# Utility functions:
+
+def display_logp_info(z, z_diffusion_cached, vae, show_histogram=True, show_molecule=True, device=None):
+    device = device if device is not None else vae.device
+
+    logps_z = chem.latent_to_logp(z, vae=vae)
+    logps_vae_normal = chem.latent_to_logp(torch.randn(size=(64, 128), device=z.device), vae=vae)
+    logps_diffusion_cached = chem.latent_to_logp(z_diffusion_cached, vae=vae)
+
+    if show_histogram:
+        display_histograms([logps_z, logps_vae_normal, logps_diffusion_cached], ['Guided Diffusion LogPs', 'VAE Prior LogPs', 'Cached Diffusion LogPs'])
+    
+    # Example of one of the guided diffusion molecule:
+    if show_molecule:
+        smiles_gd = gd.latent_to_smiles(z, vae=vae)
+        display_molecule(smiles_string=smiles_gd[0], title='Guided Diffusion Output')
+
+    # you would not believe me but I actually wrote this not claude for once lmao
+
+    print("LogP Stats: ")
+    print(f"Max LogP: {max(logps_z):.2f}")
+    print(f"Min LogP: {min(logps_z):.2f}")
+    print(f"Avg LogP: {sum(logps_z) / len(logps_z):.2ff}")
+
+    print("\nStats:")
+    is_different, p_value = gdstats.is_different_from_other(z, z_diffusion_cached, do_print=True)
+    

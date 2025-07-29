@@ -1,8 +1,8 @@
 from typing import Literal, NamedTuple
 
-from model.diffusion.unet1d import Unet1D
-from model.diffusion.beta_scheduler import BetaSchedule
-from model.diffusion.util import *
+from gdiffusion.diffusion.unet1d import Unet1D
+from gdiffusion.diffusion.beta_scheduler import BetaSchedule
+from gdiffusion.diffusion.util import *
 
 from functools import partial
 from collections import namedtuple

@@ -1,4 +1,4 @@
-from model.diffusion.util import *
+from gdiffusion.diffusion.util import *
 import torch
 
 # abstract base class

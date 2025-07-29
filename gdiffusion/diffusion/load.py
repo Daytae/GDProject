@@ -1,7 +1,7 @@
 import torch
-from model.diffusion.unet1d import Unet1D
-from model.diffusion.latent_diffusion_model import LatentDiffusionModel
-from model.diffusion.beta_scheduler import BetaScheduleSigmoid
+from gdiffusion.diffusion.unet1d import Unet1D
+from gdiffusion.diffusion.latent_diffusion_model import LatentDiffusionModel
+from gdiffusion.diffusion.beta_scheduler import BetaScheduleSigmoid
 from util.util import get_device
 
 def create_diffusion_model(
