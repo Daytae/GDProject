@@ -1,4 +1,3 @@
-import gzip
 from pathlib import Path
 from typing import List
 
@@ -6,10 +5,10 @@ import lightning as pl
 import torch
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
-from gdiffusion.vae.molformers.datamodules.batch_sampler import SequenceLengthBatchSampler
+from peptide_molformers.datamodules.peptide_batch_sampler import SequenceLengthBatchSampler
 
 
-class SELFIESDataModule(pl.LightningDataModule):
+class PeptideDataModule(pl.LightningDataModule):
     def __init__(self, data_root: str, vocab: dict[str, int], batch_size: int, num_workers: int, len_sample: bool = False) -> None:
         super().__init__()
 
@@ -29,15 +28,13 @@ class SELFIESDataModule(pl.LightningDataModule):
         self.len_sample = len_sample
 
     def train_dataloader(self) -> DataLoader:
-        ds = SELFIESDataset(self.data_root, 'train', self.vocab)
+        ds = PeptideDataset(self.data_root, 'train', self.vocab)
         if self.len_sample:
             return DataLoader(
                 ds,
-                # batch_size=self.batch_size,
-                # shuffle=True,
                 num_workers=self.num_workers,
                 collate_fn=ds.get_collate_fn(),
-                batch_sampler=SequenceLengthBatchSampler(ds.selfies, bucket_size=25, batch_size=self.batch_size)
+                batch_sampler=SequenceLengthBatchSampler(ds.peptides, bucket_size=5, batch_size=self.batch_size)
             )
         else:
             return DataLoader(
@@ -49,7 +46,7 @@ class SELFIESDataModule(pl.LightningDataModule):
             )
 
     def val_dataloader(self) -> DataLoader:
-        ds = SELFIESDataset(self.data_root, 'val', self.vocab)
+        ds = PeptideDataset(self.data_root, 'val', self.vocab)
         return DataLoader(
             ds,
             batch_size=self.batch_size,
@@ -59,7 +56,7 @@ class SELFIESDataModule(pl.LightningDataModule):
         )
 
     def test_dataloader(self) -> DataLoader:
-        ds = SELFIESDataset(self.data_root, 'test', self.vocab)
+        ds = PeptideDataset(self.data_root, 'test', self.vocab)
         return DataLoader(
             ds,
             batch_size=self.batch_size,
@@ -68,7 +65,7 @@ class SELFIESDataModule(pl.LightningDataModule):
             collate_fn=ds.get_collate_fn()
         )
 
-class SELFIESDataset(Dataset):
+class PeptideDataset(Dataset):
     def __init__(self, data_root: str, split: str, vocab: dict[str, int]) -> None:
         super().__init__()
 
@@ -76,20 +73,43 @@ class SELFIESDataset(Dataset):
         self.split = split
         self.vocab = vocab
 
-        path = Path(data_root) / f'{split}_selfie.gz'
+        # Try different file extensions
+        path = Path(data_root) / f'{split}_peptide.txt'
+        if not path.exists():
+            path = Path(data_root) / f'{split}_peptide.csv'
+        if not path.exists():
+            path = Path(data_root) / f'{split}.txt'
+        if not path.exists():
+            path = Path(data_root) / f'{split}.csv'
 
-        with gzip.open(path, 'rt') as f:
-            self.selfies = [l.strip() for l in f.readlines()]
+        with open(path, 'r') as f:
+            self.peptides = [l.strip() for l in f.readlines() if l.strip()]
 
     def __len__(self) -> int:
-        return len(self.selfies)
+        return len(self.peptides)
 
     def __getitem__(self, index: int) -> torch.Tensor:
-        selfie = f"[start]{self.selfies[index]}[stop]"
-
-        tokens = fast_split(selfie)
+        peptide = f"[start]{self.peptides[index]}[stop]"
+        
+        # Tokenize peptide - each character is a token
+        tokens = []
+        i = 0
+        while i < len(peptide):
+            if peptide[i] == '[':
+                # Find the end of the special token
+                end = peptide.find(']', i)
+                if end != -1:
+                    token = peptide[i:end+1]
+                    tokens.append(token)
+                    i = end + 1
+                else:
+                    tokens.append(peptide[i])
+                    i += 1
+            else:
+                tokens.append(peptide[i])
+                i += 1
+        
         tokens = torch.tensor([self.vocab[tok] for tok in tokens])
-
         return tokens
 
     def get_collate_fn(self):
@@ -97,6 +117,23 @@ class SELFIESDataset(Dataset):
             return pad_sequence(batch, batch_first=True, padding_value=self.vocab['[pad]'])
         return collate
 
-# Faster than sf.split_selfies because it doesn't check for invalid selfies
-def fast_split(selfie: str) -> list[str]:
-    return [f"[{tok}" for tok in selfie.split("[") if tok]
+# Simple tokenization for peptides
+def peptide_tokenize(peptide: str) -> list[str]:
+    """Tokenize peptide sequence into individual amino acids and special tokens"""
+    tokens = []
+    i = 0
+    while i < len(peptide):
+        if peptide[i] == '[':
+            # Find the end of the special token
+            end = peptide.find(']', i)
+            if end != -1:
+                token = peptide[i:end+1]
+                tokens.append(token)
+                i = end + 1
+            else:
+                tokens.append(peptide[i])
+                i += 1
+        else:
+            tokens.append(peptide[i])
+            i += 1
+    return tokens

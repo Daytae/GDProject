@@ -1,0 +1,1 @@
+from gdiffusion.vae.peptide_molformers.datamodules.selfie_dataset import SELFIESDataModule

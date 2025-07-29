@@ -4,10 +4,9 @@ import torch
 from torch.distributions import Categorical
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
-from gdiffusion.vae.molformers.utils.PostCollapse import KLCalc
-from gdiffusion.vae.molformers.utils.utils import count_parameters
+from gdiffusion.vae.peptide_molformers.utils.PostCollapse import KLCalc
+from gdiffusion.vae.peptide_molformers.utils.utils import count_parameters
 
-import torch.nn.functional as F
 
 class VAEModule(pl.LightningModule):
     def __init__(self, model):
@@ -38,41 +37,6 @@ class VAEModule(pl.LightningModule):
         self.logvals(outputs, 'validation')
         self.val_kld.update(outputs['mu_ign'], outputs['sigma_ign'])
 
-    def sample_with_grad(self, z: torch.Tensor, argmax=True, max_len=256):
-        z = z.reshape(-1, self.model.n_acc, self.model.d_bnk).to(self.device)
-        if hasattr(self, 'decoder_neck'):
-            z = self.decoder_neck(z.flatten(1)).reshape(z.shape[0], self.n_bn, self.d_decoder)
-        
-        tokens = torch.full((z.shape[0], 1), fill_value=self.model.start_tok, 
-                        device=self.device, dtype=torch.long)
-        
-        # Track expected length (differentiable)
-        expected_length = torch.zeros(z.shape[0], device=self.device, requires_grad=True)
-        step = 0
-        
-        while True:
-            logits = self.model.decode(z, tokens)[:, -1:]
-            
-            # Probability of stop token at this step
-            stop_probs = F.softmax(logits, dim=-1)[:, 0, self.model.stop_tok]
-            
-            # Add expected contribution to length (differentiable)
-            # Each step contributes: step * P(stop at this step) * P(didn't stop before)
-            expected_length = expected_length + (step + 1) * stop_probs
-            
-            if argmax:
-                sample = logits.argmax(dim=-1)
-            else:
-                sample = Categorical(logits=logits).sample()
-            
-            tokens = torch.cat([tokens, sample], dim=-1)
-            step += 1
-            
-            if (tokens == self.model.stop_tok).any(dim=-1).all() or tokens.shape[1] > max_len:
-                break
-        
-        # Return both discrete tokens and differentiable length
-        return tokens[:, 1:], expected_length
     @torch.inference_mode()
     def sample(self, z: torch.Tensor, argmax=True, max_len=256):
         training = self.training

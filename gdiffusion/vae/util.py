@@ -6,8 +6,12 @@ from torch.nn.utils.rnn import pad_sequence
 import lightning.pytorch as pl
 import selfies as sf
 
-from gdiffusion.vae.molformers.models.BaseTrainer import VAEModule
-from gdiffusion.vae.molformers.models.BaseVAESwiGLURope import BaseVAE
+from gdiffusion.vae.selfies_molformers.models.BaseTrainer import VAEModule as SelfiesVAEModule
+from gdiffusion.vae.selfies_molformers.models.BaseVAESwiGLURope import BaseVAE as SelfiesBaseVAE
+
+from gdiffusion.vae.peptide_molformers.models.peptide_BaseTrainer import VAEModule as PeptideVAEModule
+
+from gdiffusion.vae.peptide_molformers.models.BaseVAESwiGLURope import BaseVAE as PeptideBaseVAE
 from typing import List, Union
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -46,7 +50,7 @@ def load_vae_selfies(path_to_vae_statedict="saved_models/selfies_vae/selfies-vae
     with open(vocab_path) as f:
         vocab = json.load(f)
     
-    model = BaseVAE(
+    model = SelfiesBaseVAE(
         vocab,
         d_bnk=16,
         n_acc=8,
@@ -77,7 +81,7 @@ def load_vae_selfies(path_to_vae_statedict="saved_models/selfies_vae/selfies-vae
     model = model.to(device)
     model.eval()
     
-    vae = VAEModule(model).eval().to(device)
+    vae = SelfiesVAEModule(model).eval().to(device)
     return vae
 
 
@@ -160,7 +164,7 @@ def selfies_to_latent(selfies: Union[str, List[str]], vae):
         return torch.cat([selfies_to_latent_helper(s, vae) for s in selfies], dim=0)
     
 
-def load_vae_peptides(path_to_vae_statedict="saved_models/peptide_vae/peptide_model.ckpt", vocab_path="saved_models/peptide_vae/peptide_vocab.json"):
+def load_vae_peptides(path_to_vae_statedict="saved_models/peptide_vae/peptide-vae.ckpt", vocab_path="saved_models/peptide_vae/vocab.json"):
     """Load a VAE model for peptide representation"""
     
     # Load vocabulary
@@ -168,7 +172,7 @@ def load_vae_peptides(path_to_vae_statedict="saved_models/peptide_vae/peptide_mo
         vocab = json.load(f)
     
     # Initialize model with same architecture as your training script
-    model = BaseVAE(
+    model = PeptideBaseVAE(
         vocab,
         d_bnk=32,
         n_acc=8,
@@ -201,7 +205,7 @@ def load_vae_peptides(path_to_vae_statedict="saved_models/peptide_vae/peptide_mo
     model.eval()
     
     # Wrap in VAEModule
-    vae = VAEModule(model).eval().to(device)
+    vae = PeptideVAEModule(model).eval().to(device)
     
     return vae
 

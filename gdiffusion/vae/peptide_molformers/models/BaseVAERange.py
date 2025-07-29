@@ -3,9 +3,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from torch.distributions import kl_divergence, Normal
-from hnn_utils import nn as HNN
 
-from gdiffusion.vae.molformers.models.components import Embedding, causal_mask, TransformerDecoderLayer, TransformerEncoderLayer
+from gdiffusion.vae.peptide_molformers.models.components import Embedding, causal_mask
 
 MIN_STD = 1e-4
 
@@ -38,8 +37,8 @@ class BaseVAE(pl.LightningModule):
 
         self.kl_factor = kl_factor
 
-        self.encoder_token_embedding = Embedding(n_tokens=self.vocab_size, d_embed=d_enc, dropout=encoder_dropout, padding_idx=self.pad_tok)
-        self.decoder_token_embedding = Embedding(n_tokens=self.vocab_size, d_embed=d_dec, dropout=decoder_dropout, padding_idx=self.pad_tok)
+        self.encoder_token_embedding = Embedding(n_tokens=self.vocab_size, d_embed=d_enc, dropout=encoder_dropout)
+        self.decoder_token_embedding = Embedding(n_tokens=self.vocab_size, d_embed=d_dec, dropout=decoder_dropout)
 
         self.enc_neck = nn.Sequential(
             nn.Linear(d_enc, 4*d_bnk),
@@ -55,37 +54,42 @@ class BaseVAE(pl.LightningModule):
 
         self.dec_tok_deproj = nn.Linear(d_dec, self.vocab_size)
 
-        self.encoder = HNN.TransformerEncoder(
-            HNN.TransformerEncoderLayer(
+        self.encoder = nn.TransformerEncoder(
+            nn.TransformerEncoderLayer(
                 d_model=d_enc,
                 nhead=encoder_nhead,
                 dim_feedforward=encoder_dim_ff,
                 dropout=encoder_dropout,
-            )
-            for _ in range(encoder_num_layers)
+                activation='gelu',
+                batch_first=True,
+                norm_first=True,
+            ),
+            num_layers=encoder_num_layers
         )
 
-        self.decoder = HNN.TransformerDecoder(
-            HNN.TransformerDecoderLayer(
+        self.decoder = nn.TransformerDecoder(
+            nn.TransformerDecoderLayer(
                 d_model=d_dec,
                 nhead=decoder_nhead,
                 dim_feedforward=decoder_dim_ff,
                 dropout=decoder_dropout,
-            )
-            for _ in range(decoder_num_layers)
+                activation='gelu',
+                batch_first=True,
+                norm_first=True,
+            ),
+            num_layers=decoder_num_layers
         )
 
         self.add_acc_toks()
 
     def encode(self, tokens):
-        # embed = self.encoder_token_embedding(tokens)
-        embed = self.encoder_token_embedding.embedding(tokens)
+        embed = self.encoder_token_embedding(tokens)
         embed = torch.cat([self.acc_toks.expand(tokens.shape[0], self.n_acc, self.d_enc), embed], dim=1)
 
         pad_mask = tokens == self.pad_tok
         pad_mask = torch.cat([torch.full((tokens.shape[0], self.n_acc), False, dtype=torch.bool, device=tokens.device), pad_mask], dim=1)
 
-        encoding = self.encoder(embed, src_pad_mask=pad_mask)[:, :self.n_acc]
+        encoding = self.encoder(embed, src_key_padding_mask=pad_mask, is_causal=False)[:, :self.n_acc]
         encoding = self.enc_neck(encoding)
 
         mu, sigma = encoding.chunk(2, dim=-1)
@@ -95,12 +99,11 @@ class BaseVAE(pl.LightningModule):
 
     def decode(self, z, tokens):
         z = self.dec_neck(z)
-        # embed = self.decoder_token_embedding(tokens)
-        embed = self.decoder_token_embedding.embedding(tokens)
+        embed = self.decoder_token_embedding(tokens)
 
         tgt_mask = causal_mask(embed.shape[1], embed.device, embed.dtype)
         # Sometimes we dont use a strictly causal mask
-        decoding = self.decoder(tgt=embed, mem=z, tgt_mask=tgt_mask)
+        decoding = self.decoder(tgt=embed, memory=z, tgt_is_causal=True, tgt_mask=tgt_mask)
         logits = self.dec_tok_deproj(decoding)
 
         return logits
@@ -115,7 +118,7 @@ class BaseVAE(pl.LightningModule):
         logits = logits[:, :-1]
         tokens = tokens[:, 1:]
 
-        recon_loss = F.cross_entropy(logits.permute(0, 2, 1), tokens, ignore_index=self.pad_tok)
+        recon_loss = F.cross_entropy(logits.permute(0, 2, 1), tokens)
 
         if self.global_step < 6250:
             kl_fac = min(self.global_step / 6250, 1.0) * self.kl_factor
@@ -132,9 +135,8 @@ class BaseVAE(pl.LightningModule):
         with torch.no_grad():
             preds = logits.argmax(dim=-1)
             mask = tokens != self.pad_tok
-
             token_acc = (preds[mask] == tokens[mask]).float().mean()
-            string_acc = ((preds == tokens) | (tokens == self.pad_tok)).all(dim=1).float().mean()
+            string_acc = (preds == tokens).all(dim=1).float().mean()
             sigma_mean = sigma.mean()
 
         return dict(
