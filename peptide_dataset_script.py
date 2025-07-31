@@ -21,15 +21,15 @@ import numpy as np
 device = util.util.get_device()
 print(f"device: {device}")
 
-DIFFUSION_PATH = "../large_files/saved_models/diffusion/molecule-diffusion-v1.pt"
-SELFIES_VAE_PATH = "../large_files/saved_models/selfies_vae/selfies-vae.ckpt"
-PEPTIDE_VAE_PATH = "../large_files/saved_models/peptide_vae/peptide-vae.ckpt"
-PEPTIDE_VAE_VOCAB_PATH = "../large_files/saved_models/peptide_vae/vocab.json"
-LOGP_PREDICTOR_PATH = "s../large_files/aved_models/logp/model-logp"
+DIFFUSION_PATH = "../large_data/saved_models/diffusion/molecule-diffusion-v1.pt"
+SELFIES_VAE_PATH = "../large_data/saved_models/selfies_vae/selfies-vae.ckpt"
+PEPTIDE_VAE_PATH = "../large_data/saved_models/peptide_vae/peptide-vae.ckpt"
+PEPTIDE_VAE_VOCAB_PATH = "../large_data/saved_models/peptide_vae/vocab.json"
+LOGP_PREDICTOR_PATH = "s../large_data/aved_models/logp/model-logp"
 
-RAW_DATA_PATH = "../large_files/data/raw_peptide/peptide_raw_10M.csv"
-PEPTIDE_DATASET_PATH = "../large_files/data/peptide_dataset.h5"
-RAW_DATA_PATH_4P5 = "../large_files/data/raw_peptide/peptide_raw_4p5.csv"
+RAW_DATA_PATH = "../large_data/data/raw_peptide/peptide_raw_10M.csv"
+PEPTIDE_DATASET_PATH = "../large_data/data/peptide_dataset.h5"
+RAW_DATA_PATH_4P5 = "../large_data/data/raw_peptide/peptide_raw_4p5.csv"
 
 peptide_10m_len = 10274724
 peptide_4p5_len = 4500001
@@ -37,11 +37,11 @@ total_len = peptide_10m_len + peptide_4p5_len - 2
 peptide_latent_dim = 256
 
 # Read from peptide latent data:
-def read_peptide_dataset_raw(i: int, data_path="../large_files/data/peptide_dataset.h5"):
+def read_peptide_dataset_raw(i: int, data_path="../large_data/data/peptide_dataset.h5"):
     with h5py.File(data_path, 'r') as f:
         return f['PEPTIDES'][i], f['EXTINCT'][i], f['DATA_SOURCE'][i], f['LATENTS'][i]
     
-def read_peptide_dataset(i: int, data_path="../large_files/data/peptide_dataset.h5"):
+def read_peptide_dataset(i: int, data_path="../large_data/data/peptide_dataset.h5"):
     with h5py.File(data_path, 'r') as f:
         raw_peptide, raw_extinct, raw_datasource, raw_latent = f['PEPTIDES'][i], f['EXTINCT'][i], f['DATA_SOURCE'][i], f['LATENTS'][i]
         peptide = raw_peptide.decode('utf-8')
