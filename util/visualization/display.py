@@ -67,13 +67,13 @@ def display_molecule(smiles_string, title=None):
 # Visualizes the latent space
 def display_latent(latent):
     latent = latent.cpu()
-    latent_reshaped = torch.reshape(latent, shape = (8, 16))
+    latent_reshaped = torch.reshape(latent, shape = (8, -1))
     plt.figure(figsize=(8, 10))
     plt.imshow(latent_reshaped, cmap='viridis')
 
     # Add values to each cell
     for i in range(8):
-        for j in range(16):
+        for j in range(latent_reshaped.shape[1]):
             plt.text(j, i, f'{latent_reshaped[i,j]:.2f}', 
                     ha='center', va='center', color='white')
 
