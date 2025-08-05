@@ -246,51 +246,53 @@ extinct_predictor : EsmClassificationHead = torch.load(EXTINCT_PREDICTOR_PATH).t
 extinct_predictor.eval()
 
 def evaluate_model(diffusion_model: gd.LatentDiffusionModel, vae=None, is_logging=True):
-    batch_size = 32
+    print("Evaluating Model...")
+    
+    # batch_size = 16
 
-    # sample from diffusion and VAE prior
-    print("Doing statistical sample")
-    z1 = diffusion_model.sample(batch_size=batch_size)
-    # z2 = diffusion_model.sample(batch_size=batch_size)
-    rand1 = torch.randn(size=(batch_size, 256))
-    rand2 = torch.randn(size=(batch_size, 256))
+    # # sample from diffusion and VAE prior
+    # print("Doing statistical sample")
+    # z1 = diffusion_model.sample(batch_size=batch_size)
+    # # z2 = diffusion_model.sample(batch_size=batch_size)
+    # rand1 = torch.randn(size=(batch_size, 256))
+    # rand2 = torch.randn(size=(batch_size, 256))
 
-    _, random_control_p = gdstats.is_different_from_other(z=rand1, z_other=rand2)
-    _, diffusion_versus_random_p = gdstats.is_different_from_other(z=z1, z_other=rand1)
+    # _, random_control_p = gdstats.is_different_from_other(z=rand1, z_other=rand2)
+    # _, diffusion_versus_random_p = gdstats.is_different_from_other(z=z1, z_other=rand1)
 
-    # TODO: Convert z1 and compare it to a random peptide and see if there is similarity
+    # # TODO: Convert z1 and compare it to a random peptide and see if there is similarity
 
-    # TODO: Diffuse with extinct and see if extinct % goes up
+    # # TODO: Diffuse with extinct and see if extinct % goes up
 
-    def log_prob_fn_extinct(z):
-        batch_size, latent_dim = z.shape
-        logits = extinct_predictor(z)
-        log_prob_sum = F.log_softmax(input=logits, dim=-1).sum(dim=0)
-        log_prob_sum[0] *= -1
-        log_prob = log_prob_sum.sum(dim=0)
-        return log_prob
+    # def log_prob_fn_extinct(z):
+    #     batch_size, latent_dim = z.shape
+    #     logits = extinct_predictor(z)
+    #     log_prob_sum = F.log_softmax(input=logits, dim=-1).sum(dim=0)
+    #     log_prob_sum[0] *= -1
+    #     log_prob = log_prob_sum.sum(dim=0)
+    #     return log_prob
 
-    cond_fn_extinct = gd.get_cond_fn(
-        log_prob_fn=log_prob_fn_extinct, 
-        guidance_strength=1.0, 
-        clip_grad=True, 
-        clip_grad_max=1.0,
-        latent_dim=256
-    )
+    # cond_fn_extinct = gd.get_cond_fn(
+    #     log_prob_fn=log_prob_fn_extinct, 
+    #     guidance_strength=1.0, 
+    #     clip_grad=True, 
+    #     clip_grad_max=1.0,
+    #     latent_dim=256
+    # )
 
-    print("Doing guided sample")
-    z_guided = diffusion_model.sample(batch_size=batch_size, cond_fn=cond_fn_extinct)
-    z_guided = z_guided.reshape(-1, 256)
-    log_probs = F.log_softmax(z_guided, dim=-1)
+    # print("Doing guided sample")
+    # z_guided = diffusion_model.sample(batch_size=batch_size, cond_fn=cond_fn_extinct)
+    # z_guided = z_guided.reshape(-1, 256)
+    # log_probs = F.log_softmax(z_guided, dim=-1)
 
 
-    eval_dict = {
-        "eval/random_control_p" : random_control_p,
-        "eval/diffusion_versus_random_p" : diffusion_versus_random_p,
-        "eval/guided_diffusion_log_prob_extinct" : log_probs
-    }
+    # eval_dict = {
+    #     "eval/random_control_p" : random_control_p,
+    #     "eval/diffusion_versus_random_p" : diffusion_versus_random_p,
+    #     "eval/guided_diffusion_log_prob_extinct" : log_probs
+    # }
 
-    wandb.log(eval_dict)
+    # wandb.log(eval_dict)
     
 trainer = DiffusionTrainer(
     diffusion_model = diffusion_model,
