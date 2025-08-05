@@ -5,7 +5,7 @@ import torch
 class LatentDataset(Dataset):
     """Dataset for a Latent Dataset"""
 
-    def __init__(self, file_loc:str ="data/molecule_dataset.h5", latent_dim=None, latent_name='LATENTS', transform=None, load_in_memory=False):
+    def __init__(self, file_loc:str ="data/molecule_dataset.h5", latent_dim=None, latent_name='LATENTS', transform=None, load_in_memory=False, dataset_len=None):
         """
         Arguments:
             file_loc (string): Path to the dataset with the latents
@@ -14,6 +14,7 @@ class LatentDataset(Dataset):
             transform: transform to be applied on a sample. The samaple is automatically reshaped into a (B, DIM) tensor
             load_in_memory (bool): If True, loads all of the dataset into memory at once. Not recommended
         """
+
         
         # keep file open
         self.file = h5py.File(file_loc, 'r')
@@ -23,7 +24,7 @@ class LatentDataset(Dataset):
         if load_in_memory:
             self.latent_dataset = self.file[latent_name][:]
             
-        self._cached_len = len(self.latent_dataset[:])
+        self._cached_len = dataset_len if dataset_len is not None else len(self.latent_dataset[:]) # speed up loading time
         self.transform = transform
 
         if not latent_dim:

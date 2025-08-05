@@ -204,7 +204,7 @@ class LatentDiffusionModel(nn.Module):
             # https://github.com/openai/guided-diffusion/issues/51 (see point 1)
             # use the predicted mean for the previous timestep to compute gradient
         """
-
+        
         gradient = cond_fn(mean, t)
         new_mean = (mean.float() + variance * gradient.float())
 

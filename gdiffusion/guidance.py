@@ -1,7 +1,7 @@
 import torch
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-def get_cond_fn(log_prob_fn, guidance_strength: float = 1.0, latent_dim: int = 128, clip_grad=False, clip_grad_max=10.0, debug=False):
+def get_cond_fn(log_prob_fn, latent_dim: int, guidance_strength: float = 1.0, clip_grad=False, clip_grad_max=10.0, debug=False):
     '''
         log_prob_fn --> maps a latent z of shape (B, 128) into a log probability
         guidance_strength --> the guidance strength of the model

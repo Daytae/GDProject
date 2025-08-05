@@ -4,7 +4,7 @@ import h5py
 class PeptideDataset(Dataset):
     """Dataset for the Peptides"""
 
-    def __init__(self, file_loc:str ="data/peptide_dataset.h5", transform=None):
+    def __init__(self, file_loc:str ="data/peptide_dataset.h5", transform=None, dataset_len=None):
         """
         Arguments:
             file_loc (string): Path to the peptide dataset
@@ -17,7 +17,7 @@ class PeptideDataset(Dataset):
         self.peptide_dataset = self.file['PEPTIDES']
         self.extinct_dataset = self.file['EXTINCT']
         self.datasource_dataset = self.file['DATA_SOURCE']
-        self._cached_len = len(self.peptide_dataset[:])
+        self._cached_len = dataset_len if dataset_len is not None else len(self.latent_dataset[:]) # speed up loading time
         self.transform = transform
 
     def __len__(self, use_cached=True):
