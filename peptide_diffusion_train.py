@@ -247,7 +247,7 @@ extinct_predictor.eval()
 
 def evaluate_model(diffusion_model: gd.LatentDiffusionModel, vae=None, is_logging=True):
     print("Evaluating Model...")
-    
+
     # batch_size = 16
 
     # # sample from diffusion and VAE prior
@@ -301,7 +301,7 @@ trainer = DiffusionTrainer(
     eval_every = EVAL_EVERY,
     train_num_examples = NUM_CYCLES,
     save_every = SAVE_EVERY,
-    save_model_folder= "train/"
+    save_model_folder= "../large_data/train/"
 )
 
 trainer.init_wandb(log_every=1, name='Peptide Diffusion Train Run (Attempt #1)', project='Guided Diffusion Project v2')
