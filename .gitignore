@@ -213,5 +213,6 @@ __pycache__/
 artifacts/
 data/
 saved_models/
+train/
 
 Dockerfile

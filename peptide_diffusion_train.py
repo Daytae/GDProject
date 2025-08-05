@@ -65,7 +65,7 @@ class DiffusionTrainer:
         train_num_examples = 100, # number of examples to train on
             
         save_every = 10, # we should save model every X examples
-        save_model_folder = "../large_data/train/", # where to save the model
+        save_model_folder = "train/", # where to save the model
 
         train_lr=1e-4,
         adam_betas = (0.9, 0.99),
@@ -111,7 +111,7 @@ class DiffusionTrainer:
         name: str = None, 
         log_type: Literal['gradients', 'parameters', 'all'] | None = None,
         project="Guided Diffusion Project v2",
-        wandb_dir="../large_data/train/wandb"
+        wandb_dir="../large_data/train"
     ):
         
         ''' Not called in __init__(), must be called manually'''
@@ -300,7 +300,7 @@ trainer = DiffusionTrainer(
     eval_every = EVAL_EVERY,
     train_num_examples = NUM_CYCLES,
     save_every = SAVE_EVERY,
-    save_model_folder= "../large_data/train/"
+    save_model_folder= "train/"
 )
 
 trainer.init_wandb(log_every=1, name='Peptide Diffusion Train Run (Attempt #1)', project='Guided Diffusion Project v2')
