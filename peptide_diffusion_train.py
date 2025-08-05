@@ -204,12 +204,10 @@ class DiffusionTrainer:
         with tqdm(initial=self.step, total=self.train_num_examples) as pbar:
             while self.step < self.train_num_examples:
                 if self.step % self.save_every == 0:
-                    # self._save_model()
-                    pass
+                    self._save_model()
 
                 if self.step % self.eval_every == 0:
-                    # self._eval_model()
-                    pass
+                    self._eval_model()
 
                 # train model for 1 step
                 loss = self._train_model_step()
@@ -305,7 +303,7 @@ trainer = DiffusionTrainer(
     save_model_folder= "train/"
 )
 
-# trainer.init_wandb(log_every=1, name='Peptide Diffusion Train Run (Attempt #1)', project='Guided Diffusion Project v2')
+trainer.init_wandb(log_every=1, name='Peptide Diffusion Train Run (Attempt #1)', project='Guided Diffusion Project v2')
 
 try:
     trainer.train()
