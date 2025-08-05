@@ -35,16 +35,16 @@ device = util.util.get_device()
 print(f"device: {device}")
 
 
-DIFFUSION_PATH = "../large_data/saved_models/diffusion/molecule-diffusion-v1.pt"
-SELFIES_VAE_PATH = "../large_data/saved_models/selfies_vae/selfies-vae.ckpt"
-SELFIES_VOCAB_PATH = "../large_data/saved_models/selfies_vae/vocab.json"
+DIFFUSION_PATH = "saved_models/diffusion/molecule-diffusion-v1.pt"
+SELFIES_VAE_PATH = "saved_models/selfies_vae/selfies-vae.ckpt"
+SELFIES_VOCAB_PATH = "saved_models/selfies_vae/vocab.json"
 
-PEPTIDE_VAE_PATH = "../large_data/saved_models/peptide_vae/peptide-vae.ckpt"
-PEPTIDE_VOCAB_PATH = "../large_data/saved_models/peptide_vae/vocab.json"
+PEPTIDE_VAE_PATH = "saved_models/peptide_vae/peptide-vae.ckpt"
+PEPTIDE_VOCAB_PATH = "saved_models/peptide_vae/vocab.json"
 
-LOGP_PREDICTOR_PATH = "../large_data/saved_models/logp/model-logp"
-EXTINCT_PREDICTOR_PATH = "../large_data/saved_models/extinct_model8417"
-PEPTIDE_DATASET_PATH = "../large_data/data/peptide_dataset.h5"
+LOGP_PREDICTOR_PATH = "saved_models/logp/model-logp"
+EXTINCT_PREDICTOR_PATH = "saved_models/extinct_model8417"
+PEPTIDE_DATASET_PATH = "data/peptide_dataset.h5"
 PEPTIDE_DATASET_LEN = 14774723 # speed up loading
 
 EVAL_EVERY = 100_000
@@ -111,7 +111,7 @@ class DiffusionTrainer:
         name: str = None, 
         log_type: Literal['gradients', 'parameters', 'all'] | None = None,
         project="Guided Diffusion Project v2",
-        wandb_dir="../large_data/train"
+        wandb_dir="train"
     ):
         
         ''' Not called in __init__(), must be called manually'''
@@ -204,10 +204,12 @@ class DiffusionTrainer:
         with tqdm(initial=self.step, total=self.train_num_examples) as pbar:
             while self.step < self.train_num_examples:
                 if self.step % self.save_every == 0:
-                    self._save_model()
+                    # self._save_model()
+                    pass
 
                 if self.step % self.eval_every == 0:
-                    self._eval_model()
+                    # self._eval_model()
+                    pass
 
                 # train model for 1 step
                 loss = self._train_model_step()
@@ -303,7 +305,7 @@ trainer = DiffusionTrainer(
     save_model_folder= "train/"
 )
 
-trainer.init_wandb(log_every=1, name='Peptide Diffusion Train Run (Attempt #1)', project='Guided Diffusion Project v2')
+# trainer.init_wandb(log_every=1, name='Peptide Diffusion Train Run (Attempt #1)', project='Guided Diffusion Project v2')
 
 try:
     trainer.train()
