@@ -75,3 +75,52 @@ def load_diffusion_model(model, model_path, device=None):
     
 
     print(f"Loaded model successfully from {model_path}")
+
+
+def create_peptide_diffusion_model(model_path, device=None):
+    device = get_device(device)
+    diffusion_model = create_diffusion_model(
+        unet_dim=256, 
+        diffusion_latent_dim=256, 
+        objective='pred_v', 
+        beta_schedule=BetaScheduleSigmoid, 
+        clip_denoised=False, 
+        clip_min=-3.0,  
+        clip_max=3.0, 
+        model_path=None, 
+        device=device
+    ).to(device)
+
+    # print basic info and what not to let user know model is created
+
+    total_params = sum(p.numel() for p in diffusion_model.parameters())
+    trainable_params = sum(p.numel() for p in diffusion_model.parameters() if p.requires_grad)
+    
+    print("")
+    print("Model created successfully")
+    print(f"- Total parameters: {total_params:,}")
+    print(f"- Trainable parameters: {trainable_params:,}")
+    print(f"- Model size: {total_params * 4 / (1024**2):.1f} MB")
+    
+    try:
+        device = next(diffusion_model.parameters()).device
+        print(f"- Device: {device}")
+    except StopIteration:
+        print("No parameters found")
+    
+    print(f"- Model Name: {type(diffusion_model).__name__}")
+
+    if model_path is not None:
+        checkpoint = torch.load(model_path)
+        diffusion_model.load_state_dict(checkpoint['model'])
+        
+    return diffusion_model
+
+def load_diffusion_model(model, model_path, device=None):
+    device = get_device(device)
+
+    checkpoint = torch.load(model_path)
+    model.load_state_dict(checkpoint['model']).to(device)
+    
+
+    print(f"Loaded model successfully from {model_path}")
