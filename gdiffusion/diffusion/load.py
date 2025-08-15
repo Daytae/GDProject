@@ -93,14 +93,14 @@ def create_peptide_diffusion_model(model_path, device=None):
 
     # print basic info and what not to let user know model is created
 
-    total_params = sum(p.numel() for p in diffusion_model.parameters())
-    trainable_params = sum(p.numel() for p in diffusion_model.parameters() if p.requires_grad)
+    # total_params = sum(p.numel() for p in diffusion_model.parameters())
+    # trainable_params = sum(p.numel() for p in diffusion_model.parameters() if p.requires_grad)
     
-    print("")
-    print("Model created successfully")
-    print(f"- Total parameters: {total_params:,}")
-    print(f"- Trainable parameters: {trainable_params:,}")
-    print(f"- Model size: {total_params * 4 / (1024**2):.1f} MB")
+    # print("")
+    # print("Model created successfully")
+    # print(f"- Total parameters: {total_params:,}")
+    # print(f"- Trainable parameters: {trainable_params:,}")
+    # print(f"- Model size: {total_params * 4 / (1024**2):.1f} MB")
     
     try:
         device = next(diffusion_model.parameters()).device
