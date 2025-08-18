@@ -117,7 +117,7 @@ def display_logp_info(z, z_diffusion_cached, vae, show_histogram=True, show_mole
     print("LogP Stats: ")
     print(f"Max LogP: {max(logps_z):.2f}")
     print(f"Min LogP: {min(logps_z):.2f}")
-    print(f"Avg LogP: {sum(logps_z) / len(logps_z):.2ff}")
+    print(f"Avg LogP: {sum(logps_z) / len(logps_z):.2f}")
 
     print("\nStats:")
     is_different, p_value = gdstats.is_different_from_other(z, z_diffusion_cached, do_print=True)
