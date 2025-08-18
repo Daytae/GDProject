@@ -3,6 +3,7 @@ from gdiffusion.diffusion.unet1d import Unet1D
 from gdiffusion.diffusion.latent_diffusion_model import LatentDiffusionModel
 from gdiffusion.diffusion.beta_scheduler import BetaScheduleSigmoid
 from util.util import get_device
+from gdiffusion.diffusion.ddim_sampler import DDIMSampler
 
 def create_diffusion_model(
         unet_dim=128,
@@ -91,17 +92,6 @@ def create_peptide_diffusion_model(model_path, device=None):
         device=device
     ).to(device)
 
-    # print basic info and what not to let user know model is created
-
-    # total_params = sum(p.numel() for p in diffusion_model.parameters())
-    # trainable_params = sum(p.numel() for p in diffusion_model.parameters() if p.requires_grad)
-    
-    # print("")
-    # print("Model created successfully")
-    # print(f"- Total parameters: {total_params:,}")
-    # print(f"- Trainable parameters: {trainable_params:,}")
-    # print(f"- Model size: {total_params * 4 / (1024**2):.1f} MB")
-    
     try:
         device = next(diffusion_model.parameters()).device
         print(f"- Device: {device}")
@@ -124,3 +114,15 @@ def load_diffusion_model(model, model_path, device=None):
     
 
     print(f"Loaded model successfully from {model_path}")
+
+
+def create_ddim_sampler(diffusion_model: LatentDiffusionModel, sampling_timesteps: int = 50, ddim_sampling_eta:float = 0.0, device='cuda'):
+    ddim = DDIMSampler(
+        model=diffusion_model.model.to(device),
+        latent_dim=diffusion_model.latent_dim,
+        num_timesteps=diffusion_model.num_timesteps,
+        sampling_timesteps=sampling_timesteps,
+        ddim_sampling_eta=ddim_sampling_eta
+    ).to(device)
+    return ddim
+    
