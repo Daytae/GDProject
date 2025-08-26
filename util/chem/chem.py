@@ -33,6 +33,7 @@ def calculate_logp(smiles, invalid_token=None):
 def selfies_to_smiles(selfies):
     return [sf.decoder(selfie) for selfie in selfies]
 
-def latent_to_logp(z, vae):
-    smiles = gd.latent_to_smiles(z=z, vae=vae)
-    return calculate_logp(smiles=smiles, invalid_token=0.0)
+
+# def latent_to_logp(z, vae):
+#     smiles = gd.latent_to_smiles(z=z, vae=vae)
+#     return calculate_logp(smiles=smiles, invalid_token=0.0)

@@ -1,10 +1,16 @@
 import torch
 
-def get_device(device=None):
+def get_device(device=None, print_device=False):
     if device is not None:
-        return device
-    
-    return 'cuda' if torch.cuda.is_available() else 'cpu'
+        ret = device
+    else:
+        ret = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+    if print_device:
+        print(f"Device: {ret}")
+    return ret
+
+
 
 # import sys
 # def _debug_sizeof_fmt(num, suffix='B'):

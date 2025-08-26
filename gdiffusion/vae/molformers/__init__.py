@@ -1,0 +1,1 @@
+from gdiffusion.vae.molformers.datamodules.selfie_dataset import SELFIESDataModule

@@ -26,3 +26,17 @@ class EsmClassificationHead(nn.Module):
         x = self.dropout(x)
         x = self.out_proj(x)
         return x
+
+    def classify(self, x):
+        return torch.softmax(self.forward(x), dim=1)
+    
+    def log_prob_fn_extinct(self, z: torch.Tensor) -> torch.Tensor:
+        logits = self.forward(z)
+        log_probs = F.log_softmax(logits, dim=1)
+        return log_probs[:, 1].sum()
+    
+    def eval_probs(self, z) -> None:
+        probs = self.classify(z)
+        print(f"Diffusion Probs: {probs}")
+        argmax = torch.argmax(probs, dim=1)
+        print(f"Percent Extinct: {argmax.sum() / len(argmax)}")

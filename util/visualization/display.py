@@ -96,20 +96,27 @@ def display_histograms(array_list, label_list):
     plt.show()
 
 # Utility functions:
+def latent_to_logp(z: torch.Tensor, vae : gd.MoleculeVAE):
+    selfies = vae.decode(z)
+    smiles = chem.selfies_to_smiles(selfies=selfies)
+    logps = chem.calculate_logp(smiles, invalid_token=0.0)
+    return logps
 
-def display_logp_info(z, z_diffusion_cached, vae, show_histogram=True, show_molecule=True, device=None):
+def display_logp_info(z, z_diffusion_cached, vae : gd.MoleculeVAE, show_histogram=True, show_molecule=True, device=None):
     device = device if device is not None else vae.device
 
-    logps_z = chem.latent_to_logp(z, vae=vae)
-    logps_vae_normal = chem.latent_to_logp(torch.randn(size=(64, 128), device=z.device), vae=vae)
-    logps_diffusion_cached = chem.latent_to_logp(z_diffusion_cached, vae=vae)
+    z_normal = torch.randn(size=(64, 128), device=z.device)
+
+    logps_z = latent_to_logp(z, vae)
+    logps_vae_normal = latent_to_logp(z_normal, vae)
+    logps_diffusion_cached = latent_to_logp(z_diffusion_cached, vae)
 
     if show_histogram:
         display_histograms([logps_z, logps_vae_normal, logps_diffusion_cached], ['Guided Diffusion LogPs', 'VAE Prior LogPs', 'Cached Diffusion LogPs'])
     
     # Example of one of the guided diffusion molecule:
     if show_molecule:
-        smiles_gd = gd.latent_to_smiles(z, vae=vae)
+        smiles_gd = chem.selfies_to_smiles(vae.decode(z))
         display_molecule(smiles_string=smiles_gd[0], title='Guided Diffusion Output')
 
     # you would not believe me but I actually wrote this not claude for once lmao
