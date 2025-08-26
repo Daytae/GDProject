@@ -9,3 +9,6 @@ from gdiffusion.guidance import *
 
 # VAE
 from gdiffusion.vae.vae import MoleculeVAE, PeptideVAE
+
+# GP
+from gdiffusion.gp_utils import GPModelDKL
