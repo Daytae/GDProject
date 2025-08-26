@@ -78,6 +78,68 @@ def update_surr_model(model, mll, learning_rte, train_z, train_y, n_epochs):
 
 # === Validation Function ===
 
+def score_lambda(function, name, latent_dim, log_qei, max_restarts=5, **kwargs):
+    """
+    Runs a function that generates latents, computes log_qEI, 
+    and handles restarts if exceptions occur.
+    """
+    num_restarts = 0
+    log_qei_score = "N/A"
+
+    while log_qei_score == "N/A" and num_restarts < max_restarts:
+        try:
+            latents = function(**kwargs)  # use kwargs properly
+            # reshape if needed
+            if isinstance(latents, tuple):
+                latents = latents[0]
+            log_qei_score = log_qei(latents.reshape(-1, latent_dim)).detach().cpu().item()
+        except Exception as e:
+            num_restarts += 1
+
+    print(f"log qei {name}: {log_qei_score}")
+    torch.cuda.empty_cache()
+    return {'log qei score': log_qei_score, 'num restarts': num_restarts}
+
+
+def evaluate_on_batch(batch_size, latent_dim, ddim_sampler, cond_fn, log_qei, bounds):
+    curr_summary = {}
+
+    # no conditioning
+    curr_summary['no cond'] = score_lambda(
+        function=ddim_sampler.sample,
+        name='no cond',
+        latent_dim=latent_dim,
+        log_qei=log_qei,
+        batch_size=batch_size,
+        cond_fn=None,
+        guidance_scale=1.0
+    )
+
+    # ddim with conditioning
+    curr_summary['ddim cond'] = score_lambda(
+        function=ddim_sampler.sample,
+        name='ddim cond',
+        latent_dim=latent_dim,
+        log_qei=log_qei,
+        batch_size=batch_size,
+        cond_fn=cond_fn,
+        guidance_scale=25.0
+    )
+
+    curr_summary['optimize acqf'] = score_lambda(
+        function=optimize_acqf,
+        name='optimize acqf',
+        latent_dim=latent_dim,
+        log_qei=log_qei,
+        acq_function=log_qei,
+        bounds=bounds,
+        q=batch_size,
+        num_restarts=10,
+        raw_samples=1024,
+    )
+
+    return curr_summary
+
 def validate_with_gp(diffusion_model, batch_sizes=[64], surr_iters=[16], log_path="./log.json"):
     print("=== Conditional Sampling (GP Condition) ===")
     ddim_sampler = gd.DDIMSampler(diffusion_model=diffusion_model, sampling_timesteps=1000)
@@ -150,45 +212,15 @@ def validate_with_gp(diffusion_model, batch_sizes=[64], surr_iters=[16], log_pat
             
             for batch_size in batch_sizes:
                 print(f"processing (iter: {idx+1}, bsz: {batch_size})")
-                curr_summary = {}
 
-                num_restarts = 0
-                log_qei_score = "N/A"
-                while log_qei_score == "N/A" and num_restarts < 5:
-                    try:
-                        latents = ddim_sampler.sample(batch_size=batch_size, cond_fn=None, guidance_scale=1.0)
-                        log_qei_score = log_qEI(latents.reshape(-1, latent_dim)).detach().cpu().item()
-                    except Exception as e:
-                        num_restarts += 1
-                curr_summary['no cond'] = {'log qei score': log_qei_score, 'num restarts': num_restarts}
-                print(f"log qei no cond: {log_qei_score}")
-                torch.cuda.empty_cache()
-
-                num_restarts = 0
-                log_qei_score = "N/A"
-                while log_qei_score == "N/A" and num_restarts < 3:
-                    try:
-                        latents = ddim_sampler.sample(batch_size=batch_size, cond_fn=cond_fn_ei, guidance_scale=25.0)
-                        log_qei_score = log_qEI(latents.reshape(-1, latent_dim)).detach().cpu().item()
-                    except Exception as e:
-                        num_restarts += 1
-                curr_summary['ddim'] = {'log qei score': log_qei_score, 'num restarts': num_restarts}
-                print(f"log qei ddim: {log_qei_score}")
-                torch.cuda.empty_cache()
-
-                num_restarts = 0
-                log_qei_score = "N/A"
-                while log_qei_score == "N/A" and num_restarts < 3:
-                    try:
-                        latents, _ = optimize_acqf(log_qEI, bounds=bounds, q=batch_size, num_restarts=10, raw_samples=1024)
-                        log_qei_score = log_qEI(latents.reshape(-1, latent_dim)).detach().cpu().item()
-                    except Exception as e:
-                        num_restarts += 1
-                curr_summary['optimize acqf'] = {'log qei score': log_qei_score, 'num restarts': num_restarts}
-                print(f"log qei optimize acqf: {log_qei_score}")
-                torch.cuda.empty_cache()
-
-                summary[f"(iter: {idx+1}, bsz: {batch_size})"] = curr_summary
+                summary[f"(iter: {idx+1}, bsz: {batch_size})"] = evaluate_on_batch(
+                    batch_size=batch_size,
+                    latent_dim=latent_dim,
+                    ddim_sampler=ddim_sampler,
+                    cond_fn=cond_fn_ei,
+                    log_qei=log_qEI,
+                    bounds=bounds
+                )
                 with open(log_path, 'w') as file:
                     json.dump(summary, file, indent=2)
         
