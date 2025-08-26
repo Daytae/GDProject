@@ -123,7 +123,7 @@ def evaluate_on_batch(batch_size, latent_dim, ddim_sampler, cond_fn, log_qei, bo
         log_qei=log_qei,
         batch_size=batch_size,
         cond_fn=cond_fn,
-        guidance_scale=25.0
+        guidance_scale=0.25
     )
 
     curr_summary['optimize acqf'] = score_lambda(
@@ -160,7 +160,7 @@ def validate_with_gp(diffusion_model, batch_sizes=[64], surr_iters=[16], log_pat
     def get_batch(idx):
         start, end = idx*data_batch_size, (idx+1)*data_batch_size
         if start > len(X_all_data):
-            return None, None
+            return None
 
         Xs = X_all_data[start:end].reshape(-1, latent_dim).clone().double().to(device)
         Ys = obj_fun(Xs.float()).reshape(-1, 1).clone().double().to(device)
@@ -226,6 +226,11 @@ def validate_with_gp(diffusion_model, batch_sizes=[64], surr_iters=[16], log_pat
         
         if idx > max(surr_iters):
             break
+
+        idx += 1
+    
+    if get_batch(idx) is None:
+        print(f'batching terminated at index {idx}')
     
     with open(log_path, 'w') as file:
         json.dump(summary, file, indent=2)
