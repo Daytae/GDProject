@@ -39,6 +39,7 @@ import json
 from tqdm import tqdm
 
 # Library imports
+import ipdb; ipdb.set_trace()
 import gdiffusion as gd
 import util
 import util.chem as chem
@@ -77,7 +78,7 @@ def update_surr_model(model, mll, learning_rte, train_z, train_y, n_epochs):
 
 # === Validation Function ===
 
-def validate_with_descriptor_gp(diffusion_model, batch_sizes=[64], surr_iters=[16], log_path="./log.json"):
+def validate_with_gp(diffusion_model, batch_sizes=[64], surr_iters=[16], log_path="./log.json"):
     print("=== Conditional Sampling (GP Condition) ===")
     ddim_sampler = gd.DDIMSampler(diffusion_model=diffusion_model, sampling_timesteps=1000)
 
@@ -92,7 +93,7 @@ def validate_with_descriptor_gp(diffusion_model, batch_sizes=[64], surr_iters=[1
         return torch.tensor(guac_score).reshape(-1, 1)
     
     latent_dim = 128
-    bounds = torch.tensor([[-3.0] * latent_dim, [3.0] * latent_dim], device=device, dtype=torch.float64)
+    bounds = torch.tensor([[-3.0] * latent_dim, [3.0] * latent_dim], device=device, dtype=torch.float32)
 
     def get_batch(idx):
         start, end = idx*data_batch_size, (idx+1)*data_batch_size
@@ -101,11 +102,10 @@ def validate_with_descriptor_gp(diffusion_model, batch_sizes=[64], surr_iters=[1
 
         Xs = X_all_data[start:end].reshape(-1, latent_dim).clone().double().to(device)
         Ys = obj_fun(Xs.float()).reshape(-1, 1).clone().double().to(device)
-        return Xs, Ys
+        return Xs.to(torch.float32), Ys.to(torch.float32)
 
     batch = get_batch(idx=0) # [b,8,16]
     inducing_z = batch[0].cuda()
-    device = inducing_z.device
 
     surrogate_model = gd.GPModelDKL(inducing_z, likelihood=gpytorch.likelihoods.GaussianLikelihood().cuda()).cuda()
     surrogate_mll = PredictiveLogLikelihood(surrogate_model.likelihood, surrogate_model, num_data=data_batch_size)
@@ -206,7 +206,7 @@ def main():
 
     os.makedirs(SAVE_PATH, exist_ok=True)
     log_path = os.path.join(SAVE_PATH, 'log.json')
-    validate_with_descriptor_gp(diffusion=molecule_diffusion_model, batch_sizes=[4, 8, 16, 32, 64, 128, 256], surr_iters = [1, 4, 16, 64, 256], log_path=log_path)
+    validate_with_gp(diffusion_model=molecule_diffusion_model, batch_sizes=[4, 8, 16, 32, 64, 128, 256], surr_iters = [1, 4, 16, 64, 256], log_path=log_path)
 
 if __name__ == "__main__":
     main()

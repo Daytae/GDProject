@@ -1,4 +1,4 @@
-name: gdiff-env
+name: pytorch-cuda
 channels:
   - pytorch
   - nvidia

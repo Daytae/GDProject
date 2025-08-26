@@ -1,1 +1,1 @@
-from ppgpr import GPModelDKL
+from .ppgpr import GPModelDKL

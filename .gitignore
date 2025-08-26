@@ -212,6 +212,7 @@ __pycache__/
 
 artifacts/
 data/
+results/
 saved_models/
 train/
 archive/

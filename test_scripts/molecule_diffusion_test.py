@@ -34,7 +34,6 @@ import matplotlib.pyplot as plt
 import pickle
 
 # Library imports
-import ipdb; ipdb.set_trace()
 import gdiffusion as gd
 import util
 import util.chem as chem
@@ -80,6 +79,9 @@ vis.display_latent(z[0], save_path=SAVE_PATH)
 
 # Load VAE and classifier
 vae = gd.MoleculeVAE()
+
+import sys
+sys.modules['__main__'].LogPPredictor = LogPPredictor
 logp_predictor : LogPPredictor = torch.load(LOGP_PREDICTOR_PATH, weights_only=False).to(device)
 
 
